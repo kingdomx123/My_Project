@@ -1,0 +1,84 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class CartScreen extends StatefulWidget {
+  final User user;
+
+  CartScreen({required this.user});
+
+  @override
+  _CartScreenState createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Your Cart'),
+      ),
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('cart')
+            .where('userId', isEqualTo: widget.user.uid)
+            .snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              return ListTile(
+                title: Text(doc['name']),
+                subtitle: Text('Price: \$${doc['price']}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.remove),
+                      onPressed: () {
+                        decrementQuantity(doc);
+                      },
+                    ),
+                    Text(doc['quantity'].toString()),
+                    IconButton(
+                      icon: Icon(Icons.add),
+                      onPressed: () {
+                        incrementQuantity(doc);
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        deleteItem(doc);
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  void incrementQuantity(DocumentSnapshot doc) {
+    int newQuantity = doc['quantity'] + 1;
+    doc.reference.update({'quantity': newQuantity});
+  }
+
+  void decrementQuantity(DocumentSnapshot doc) {
+    int newQuantity = doc['quantity'] - 1;
+    if (newQuantity > 0) {
+      doc.reference.update({'quantity': newQuantity});
+    } else {
+      deleteItem(doc);
+    }
+  }
+
+  void deleteItem(DocumentSnapshot doc) {
+    doc.reference.delete();
+  }
+}
+

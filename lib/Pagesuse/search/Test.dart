@@ -1,75 +1,43 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_appshop1/Pagesuse/search/Test1.dart';
 
-class AddProductPage extends StatefulWidget {
-  @override
-  _AddProductPageState createState() => _AddProductPageState();
-}
-
-class _AddProductPageState extends State<AddProductPage> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-
-  void _addProduct() {
-    String name = _nameController.text;
-    String description = _descriptionController.text;
-    double? price = double.tryParse(_priceController.text);
-
-    if (price == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Invalid price format')));
-      return;
-    }
-
-    FirebaseFirestore.instance.collection('products').add({
-      'name': name,
-      'description': description,
-      'price': price,
-    }).then((value) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Product added successfully')),
-      );
-      _nameController.clear();
-      _descriptionController.clear();
-      _priceController.clear();
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add product: $error')),
-      );
-    });
-  }
+class VeggieListScreen extends StatelessWidget {
+  final currentUser = FirebaseAuth.instance.currentUser!;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Product'),
+        title: Text('Veggie Store'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Product Name'),
-            ),
-            TextField(
-              controller: _descriptionController,
-              decoration: InputDecoration(labelText: 'Product Description'),
-            ),
-            TextField(
-              controller: _priceController,
-              decoration: InputDecoration(labelText: 'Product Price'),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addProduct,
-              child: Text('Add Product'),
-            ),
-          ],
-        ),
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('Vegetable').snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              return ListTile(
+                title: Text(doc['ชื่อผัก']),
+                subtitle: Text('ราคา: \$${doc['ราคาผัก']}'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VeggieDetailScreen(
+                        veggie: doc,
+                        user: currentUser,
+                      ),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
+          );
+        },
       ),
     );
   }

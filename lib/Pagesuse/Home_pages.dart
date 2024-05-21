@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -15,6 +16,8 @@ class Home_v extends StatefulWidget {
 }
 
 class _Home_vState extends State<Home_v> {
+  final currentUser = FirebaseAuth.instance.currentUser!;
+
   List _products = [];
   var _firestoreInstance = FirebaseFirestore.instance;
 
@@ -46,8 +49,11 @@ class _Home_vState extends State<Home_v> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ProductDetailScreen(productDocument: productDocument),
+        builder: (context) => ProductDetailScreen(
+          productDocument: productDocument,
+          veggie: productDocument,
+          user: currentUser,
+        ),
       ),
     );
   }
@@ -63,43 +69,6 @@ class _Home_vState extends State<Home_v> {
       imageUrls =
           querySnapshot.docs.map((doc) => doc['รูป'] as String).toList();
     });
-  }
-
-  //oder
-
-  final ShoppingCart _cart = ShoppingCart();
-
-  void _addToCart(Product product) {
-    setState(() {
-      _cart.addProduct(product);
-    });
-  }
-
-  void _placeOrder() async {
-    CollectionReference orders =
-        FirebaseFirestore.instance.collection('orders');
-
-    List<Map<String, dynamic>> items = _cart.items.map((cartItem) {
-      return {
-        'productId': cartItem.product.id,
-        'name': cartItem.product.name,
-        'quantity': cartItem.quantity,
-        'price': cartItem.product.price,
-      };
-    }).toList();
-
-    await orders.add({
-      'items': items,
-      'totalPrice': _cart.totalPrice,
-      'createdAt': Timestamp.now(),
-    });
-
-    setState(() {
-      _cart.clear();
-    });
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Order placed successfully')));
   }
 
   @override
@@ -182,8 +151,9 @@ class _Home_vState extends State<Home_v> {
                   ),
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) =>
-                          CartPage(cart: _cart, placeOrder: _placeOrder),
+                      builder: (context) => CartScreen(
+                        user: currentUser,
+                      ),
                     ));
                   },
                 ),

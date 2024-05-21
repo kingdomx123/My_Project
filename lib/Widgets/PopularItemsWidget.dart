@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_appshop1/Pagesuse/datails/details1.dart';
 import 'package:flutter_appshop1/Pagesuse/datails/details2.dart';
 
 /*หน้าสินค้าแนะนำ*/
 class PopularItemsWidget extends StatelessWidget {
+  final currentUser = FirebaseAuth.instance.currentUser!;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -28,7 +31,10 @@ class PopularItemsWidget extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => Details1(),
+                            builder: (context) => Details1(
+                              veggie: snapshot.data!,
+                              user: currentUser,
+                            ),
                           ),
                         );
                       },
@@ -109,7 +115,10 @@ class PopularItemsWidget extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => Details2(),
+                            builder: (context) => Details2(
+                              veggie: snapshot.data!,
+                              user: currentUser,
+                            ),
                           ),
                         );
                       },

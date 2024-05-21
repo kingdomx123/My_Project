@@ -1,12 +1,76 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_appshop1/Pagesuse/Details_of_ordering_products.dart';
 
 class ProductDetailScreen extends StatelessWidget {
+  final DocumentSnapshot veggie;
+  final User user;
   final DocumentSnapshot productDocument;
 
-  const ProductDetailScreen({Key? key, required this.productDocument})
+  void addToCart(DocumentSnapshot veggie) {
+    FirebaseFirestore.instance.collection('cart').add({
+      'userId': user.uid,
+      'veggieId': veggie.id,
+      'name': veggie['ชื่อผัก'],
+      'price': veggie['ราคาผัก'],
+      'quantity': 1,
+    });
+  }
+
+  void purchaseItem(DocumentSnapshot veggie, BuildContext context) async {
+    await FirebaseFirestore.instance.collection('orders').add({
+      'userId': user.uid,
+      'veggieId': veggie.id,
+      'name': veggie['ชื่อผัก'],
+      'price': veggie['ราคาผัก'],
+      'quantity': 1,
+      'status': 'pending',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    await updateStock(veggie.id);
+
+    clearCart();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Order placed and cart cleared')),
+    );
+  }
+
+  void clearCart() async {
+    final cartCollection = FirebaseFirestore.instance.collection('cart');
+    final snapshot =
+        await cartCollection.where('userId', isEqualTo: user.uid).get();
+    for (DocumentSnapshot doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  Future<void> updateStock(String veggieId) async {
+    final veggieDoc =
+        FirebaseFirestore.instance.collection('vegetable').doc(veggieId);
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(veggieDoc);
+      if (!snapshot.exists) {
+        throw Exception("Veggie does not exist!");
+      }
+
+      int newStock = snapshot['จำนวนสินค้า'] - 1;
+      if (newStock < 0) {
+        throw Exception("Not enough stock available!");
+      }
+
+      transaction.update(veggieDoc, {'จำนวนสินค้า': newStock});
+    });
+  }
+
+  const ProductDetailScreen(
+      {Key? key,
+      required this.productDocument,
+      required this.veggie,
+      required this.user})
       : super(key: key);
 
   @override
@@ -77,10 +141,10 @@ class ProductDetailScreen extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () {
-                    /*Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => Myhomepage_m()),
-                              );*/
+                    addToCart(veggie);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('ได้เพิ่มสินค้าลงตะกร้าแล้ว')),
+                    );
                   },
                   child: SizedBox(
                     width: 161.4,
@@ -132,7 +196,14 @@ class ProductDetailScreen extends StatelessWidget {
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    OrderConfirmationScreen(user: user)),
+                          );
+                        },
                       ),
                     ),
                   ),

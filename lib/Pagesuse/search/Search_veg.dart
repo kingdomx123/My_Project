@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -11,6 +12,8 @@ class SearchForm extends StatefulWidget {
   State<SearchForm> createState() => _SearchFormState();
 }
 
+final currentUser = FirebaseAuth.instance.currentUser!;
+
 class _SearchFormState extends State<SearchForm> {
   void _openProductDetailPage(
       BuildContext context, DocumentSnapshot productDocument) {
@@ -18,8 +21,11 @@ class _SearchFormState extends State<SearchForm> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ProductDetailScreen(productDocument: productDocument),
+        builder: (context) => ProductDetailScreen(
+          productDocument: productDocument,
+          veggie: productDocument,
+          user: currentUser,
+        ),
       ),
     );
   }
