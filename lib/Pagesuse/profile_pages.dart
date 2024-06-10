@@ -8,9 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_appshop1/Home/Map_Screen.dart';
 import 'package:flutter_appshop1/Home/myhomepage.dart';
+import 'package:flutter_appshop1/Pagesuse/Profile_edit/Profile_edit_map.dart';
 import 'package:flutter_appshop1/auth/text_box.dart';
 import 'package:flutter_appshop1/model/profilemember.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Profile_v extends StatefulWidget {
@@ -25,8 +27,6 @@ class _Profile_vState extends State<Profile_v> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   //เข้าถึงข้อมูลผู้ใช้งานเพื้อทำการแก้ไข
   final usersCollection = FirebaseFirestore.instance.collection("members");
-
-  String imageUrl = '';
 
   // ระบบล็อคเอ้า
   Future<void> _signOut(BuildContext context) async {
@@ -83,7 +83,7 @@ class _Profile_vState extends State<Profile_v> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MapScreen(),
+        builder: (context) => Profile_edit_map(),
       ),
     );
     if (result != null) {
@@ -122,6 +122,7 @@ class _Profile_vState extends State<Profile_v> {
   // แบบถ่ายเอง
 
   //อัพโหลดภาพโปรไฟล์
+  String imageUrl = '';
   void showImagePickerOption(BuildContext context) {
     showModalBottomSheet(
         context: context,
@@ -374,7 +375,7 @@ class _Profile_vState extends State<Profile_v> {
                       ),
                     ),
                   ),
-                  Padding(
+                  /*Padding(
                     padding: EdgeInsets.only(left: 200),
                     child: TextButton(
                       child: Text(
@@ -425,7 +426,7 @@ class _Profile_vState extends State<Profile_v> {
                         );
                       },
                     ),
-                  ),
+                  ),*/
                 ],
               ),
             );

@@ -62,7 +62,7 @@ class _welcomehomeadminState extends State<Welcomehomeadmin> {
     Editvegetable_admin(),
     Statistics_admin(),
     Profile_a(),
-    Oder_admin(),
+    OrderManagementScreen(),
   ];
   @override
   Widget build(BuildContext context) {

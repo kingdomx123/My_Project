@@ -159,7 +159,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     return ListTile(
                                       title: Text(doc['name']),
                                       subtitle: Text(
-                                          'Price: \$${doc['price']} x ${doc['quantity']}'),
+                                          'ราคา: ${doc['price']} x ${doc['quantity']}'),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -251,7 +251,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             SizedBox(
               height: 20,
             ),
-            Row(
+            /*Row(
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 15),
@@ -265,9 +265,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                   style: TextStyle(fontSize: 16),
                 ),
               ],
-            ),
+            ),*/
             SizedBox(
-              height: 150,
+              height: 165,
             ),
             StreamBuilder(
               stream: FirebaseFirestore.instance
@@ -344,6 +344,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   void _purchaseItems(List<DocumentSnapshot> cartItems) async {
+    // ดึงข้อมูลที่อยู่ผู้ใช้
+    DocumentSnapshot userDoc =
+        await usersCollection.doc(currentUser.email).get();
+    String userAddress = userDoc['ที่อยู๋'];
+    String username = userDoc['ชื่อ'];
+    String userlastname = userDoc['นามสกุล'];
+    String usernumber = userDoc['เบอร์โทรศัพท์'];
+    String loc = userDoc['พิกัด'];
+
     final batch = FirebaseFirestore.instance.batch();
     for (var item in cartItems) {
       batch.set(FirebaseFirestore.instance.collection('orders').doc(), {
@@ -353,6 +362,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'price': item['price'],
         'quantity': item['quantity'],
         'status': 'รอการอนุมัติ',
+        'ที่อยู่': userAddress,
+        'ชื่อลูกค้า': username,
+        'นามสกุลลูกค้า': userlastname,
+        'เบอร์โทรศัพท์': usernumber,
+        'พิกัด': loc,
         'timestamp': FieldValue.serverTimestamp(),
       });
 

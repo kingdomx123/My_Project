@@ -46,7 +46,7 @@ class _CartScreenState extends State<CartScreen> {
                     children: cartItems.map((doc) {
                       return ListTile(
                         title: Text(doc['name']),
-                        subtitle: Text('Price: \$${doc['price']}'),
+                        subtitle: Text('ราคา: ${doc['price']} บาท'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

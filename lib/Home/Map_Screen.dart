@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,137 +10,204 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late GoogleMapController mapController;
-  GoogleMapController? _controller;
-  LatLng _selectedLocation = LatLng(19.0308, 99.9263);
-  Marker? _marker;
-  Position? _currentPosition;
-  final TextEditingController _addressController = TextEditingController();
+  GoogleMapController? _mapController;
+  TextEditingController _addressController = TextEditingController();
+  LatLng? _selectedLocation;
+  Set<Marker> _markers = {};
 
-  Future<void> _searchAddress() async {
-    String address = _addressController.text;
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
     try {
-      List<Location> locations = await locationFromAddress(address);
-      if (locations.isNotEmpty) {
-        Location location = locations.first;
-        LatLng target = LatLng(location.latitude, location.longitude);
-
-        setState(() {
-          _selectedLocation = target;
-          _marker = Marker(
-            markerId: MarkerId(address),
-            position: target,
-            infoWindow: InfoWindow(
-              title: address,
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        _selectedLocation = LatLng(position.latitude, position.longitude);
+        _markers.add(
+          Marker(
+            markerId: MarkerId("currentLocation"),
+            position: _selectedLocation!,
+          ),
+        );
+        if (_mapController != null) {
+          _mapController!.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: _selectedLocation!,
+                zoom: 17,
+              ),
             ),
           );
-        });
-
-        mapController.animateCamera(CameraUpdate.newLatLng(target));
-      } else {
-        // ไม่พบที่อยู่
-        _showErrorDialog("ไม่พบที่อยู่");
-      }
+        }
+      });
     } catch (e) {
-      _showErrorDialog("ไม่พบที่อยู่");
+      print("Failed to get current location: $e");
     }
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    if (_currentPosition != null) {
-      mapController.animateCamera(CameraUpdate.newLatLng(_selectedLocation));
-    }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("ข้อผิดพลาด"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("ตกลง"),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('เลือกที่อยู่ของท่าน'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.check),
-            onPressed: () async {
-              String address = await _getAddressFromLatLng(_selectedLocation);
-              Navigator.pop(context, address);
-            },
-          ),
-        ],
-      ),
       body: Column(
         children: [
+          SizedBox(
+            height: 20,
+          ),
           Padding(
             padding: EdgeInsets.all(8.0),
             child: Row(
               children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(0, 0, 0, 0),
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
                 Expanded(
                   child: TextField(
                     controller: _addressController,
                     decoration: InputDecoration(
-                      hintText: 'ค้นหาที่อยู่ของท่าน',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                      ),
+                      labelText: 'ค้นหาตำแหน่งที่อยู่',
                     ),
                   ),
                 ),
                 IconButton(
                   icon: Icon(Icons.search),
-                  onPressed: _searchAddress,
+                  onPressed: () async {
+                    String address = _addressController.text;
+                    try {
+                      List<Location> locations =
+                          await locationFromAddress(address);
+                      if (locations.isNotEmpty) {
+                        Location location = locations.first;
+                        setState(() {
+                          _selectedLocation =
+                              LatLng(location.latitude, location.longitude);
+                          _markers.clear(); // ลบปักหมุดเก่าออก
+                          _markers.add(
+                            Marker(
+                              markerId: MarkerId("searchedLocation"),
+                              position: _selectedLocation!,
+                            ),
+                          );
+                        });
+                        _mapController!.animateCamera(
+                          CameraUpdate.newCameraPosition(
+                            CameraPosition(
+                              target: _selectedLocation!,
+                              zoom: 17,
+                            ),
+                          ),
+                        );
+                      } else {
+                        Fluttertoast.showToast(
+                          msg: 'ไม่พบที่อยู่',
+                          gravity: ToastGravity.BOTTOM,
+                        );
+                      }
+                    } catch (e) {
+                      Fluttertoast.showToast(
+                        msg: 'เกิดข้อผิดพลาดในการค้นหาที่อยู่',
+                        gravity: ToastGravity.BOTTOM,
+                      );
+                    }
+                  },
                 ),
               ],
             ),
           ),
           Expanded(
             child: GoogleMap(
-              onMapCreated: _onMapCreated,
+              onMapCreated: (controller) {
+                setState(() {
+                  _mapController = controller;
+                  if (_selectedLocation != null) {
+                    _mapController!.animateCamera(
+                      CameraUpdate.newCameraPosition(
+                        CameraPosition(
+                          target: _selectedLocation!,
+                          zoom: 17,
+                        ),
+                      ),
+                    );
+                  }
+                });
+              },
               initialCameraPosition: CameraPosition(
-                target: _selectedLocation,
-                zoom: 17,
+                target: LatLng(0, 0), // Default position
+                zoom: 2,
               ),
+              markers: _markers,
               onTap: (position) {
                 setState(() {
+                  _markers.clear();
+                  _markers.add(
+                    Marker(
+                      markerId: MarkerId(position.toString()),
+                      position: position,
+                    ),
+                  );
                   _selectedLocation = position;
                 });
               },
-              markers: {
-                Marker(
-                  markerId: MarkerId('selectedLocation'),
-                  position: _selectedLocation,
+            ),
+          ),
+          SizedBox(
+            width: 300,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  // กำหนดรูปร่างของปุ่ม
+                  side: BorderSide(
+                      color: Colors.black87, width: 2), // กำหนดเส้นขอบของปุ่ม
+                  borderRadius: BorderRadius.circular(
+                      0), // กำหนดรัศมีของมุมเป็น 0 จะทำให้มีรูปร่างเป็นสี่เหลี่ยม
                 ),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () {
+                _markers.clear();
+                _getCurrentLocation();
               },
+              child: Text('ตำแหน่งปัจจุบัน', style: TextStyle(fontSize: 20)),
+            ),
+          ),
+          SizedBox(
+            width: 300,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  // กำหนดรูปร่างของปุ่ม
+                  side: BorderSide(
+                      color: Colors.black87, width: 2), // กำหนดเส้นขอบของปุ่ม
+                  borderRadius: BorderRadius.circular(
+                      0), // กำหนดรัศมีของมุมเป็น 0 จะทำให้มีรูปร่างเป็นสี่เหลี่ยม
+                ),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () {
+                Navigator.pop(context, _selectedLocation);
+              },
+              child: Text('เพิ่มที่อยู่ใหม่', style: TextStyle(fontSize: 20)),
             ),
           ),
         ],
       ),
     );
-  }
-
-  Future<String> _getAddressFromLatLng(LatLng position) async {
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      Placemark place = placemarks[0];
-      return "${place.street}, ${place.locality}, ${place.postalCode}, ${place.country}";
-    } catch (e) {
-      print(e);
-      return "ไม่ทราบตำแหน่ง";
-    }
   }
 }

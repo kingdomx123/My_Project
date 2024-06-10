@@ -24,7 +24,7 @@ class _mainwelcomeState extends State<Welcomehome> {
 
   List pages = [
     Home_v(),
-    List_P(),
+    UserOrdersScreen(),
     Contact_p(),
     Message_p(),
     Profile_v(),

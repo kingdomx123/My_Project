@@ -193,7 +193,8 @@ class _Editvegetable_adminState extends State<Editvegetable_admin> {
                     ElevatedButton(
                         onPressed: () async {
                           final String product = _Product.text;
-                          final String number_pdt = _Number_product.text;
+                          final int? number_pdt =
+                              int.tryParse(_Number_product.text);
                           final double? price = double.tryParse(_Price.text);
                           if (price != null) {
                             try {
@@ -239,7 +240,8 @@ class _Editvegetable_adminState extends State<Editvegetable_admin> {
     if (documentSnapshot != null) {
       _Product.text = documentSnapshot['ชื่อผัก'];
       _Price.text = (documentSnapshot['ราคาผัก'] as num).toDouble().toString();
-      _Number_product.text = documentSnapshot['จำนวนผัก'];
+      _Number_product.text =
+          (documentSnapshot['จำนวนผัก'] as num).toInt().toString();
     }
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -300,7 +302,8 @@ class _Editvegetable_adminState extends State<Editvegetable_admin> {
                         onPressed: () async {
                           final String product = _Product.text;
                           final double? price = double.tryParse(_Price.text);
-                          final String number_pdt = _Number_product.text;
+                          final int? number_pdt =
+                              int.tryParse(_Number_product.text);
                           if (price != null) {
                             FirebaseFirestore.instance
                                 .collection("Vegetable")

@@ -1,59 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class CartScreen extends StatefulWidget {
-  final User user;
-
-  CartScreen({required this.user});
-
+class OrderManagementScreen extends StatefulWidget {
   @override
-  _CartScreenState createState() => _CartScreenState();
+  _OrderManagementScreenState createState() => _OrderManagementScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
+class _OrderManagementScreenState extends State<OrderManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Your Cart'),
+        title: Text('Order Management'),
       ),
       body: StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('cart')
-            .where('userId', isEqualTo: widget.user.uid)
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('orders').snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
+          final orders = snapshot.data!.docs;
+
           return ListView(
-            children: snapshot.data!.docs.map((doc) {
+            children: orders.map((doc) {
               return ListTile(
                 title: Text(doc['name']),
-                subtitle: Text('Price: \$${doc['price']}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.remove),
-                      onPressed: () {
-                        decrementQuantity(doc);
-                      },
-                    ),
-                    Text(doc['quantity'].toString()),
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () {
-                        incrementQuantity(doc);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        deleteItem(doc);
-                      },
-                    ),
+                    Text('Quantity: ${doc['quantity']}'),
+                    Text('Total Price: \$${doc['price'] * doc['quantity']}'),
+                    Text('Status: ${doc['status']}'),
                   ],
+                ),
+                trailing: SizedBox(
+                  width: 120, // กำหนดขนาดให้กับ trailing widget
+                  child: _buildActionButton(doc),
                 ),
               );
             }).toList(),
@@ -63,22 +45,36 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void incrementQuantity(DocumentSnapshot doc) {
-    int newQuantity = doc['quantity'] + 1;
-    doc.reference.update({'quantity': newQuantity});
-  }
+  Widget _buildActionButton(DocumentSnapshot doc) {
+    String status = doc['status'];
 
-  void decrementQuantity(DocumentSnapshot doc) {
-    int newQuantity = doc['quantity'] - 1;
-    if (newQuantity > 0) {
-      doc.reference.update({'quantity': newQuantity});
+    if (status == 'pending') {
+      return ElevatedButton(
+        onPressed: () {
+          _updateOrderStatus(doc.id, 'approved');
+        },
+        child: Text('Approve'),
+      );
+    } else if (status == 'approved') {
+      return ElevatedButton(
+        onPressed: () {
+          _updateOrderStatus(doc.id, 'completed');
+        },
+        child: Text('Complete'),
+      );
     } else {
-      deleteItem(doc);
+      return Container(); // No action needed for completed orders
     }
   }
 
-  void deleteItem(DocumentSnapshot doc) {
-    doc.reference.delete();
+  void _updateOrderStatus(String orderId, String newStatus) {
+    FirebaseFirestore.instance.collection('orders').doc(orderId).update({
+      'status': newStatus,
+      '${newStatus}At': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Order status updated to $newStatus')),
+    );
   }
 }
-

@@ -134,82 +134,98 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: 20),
+            Text(
+              data['จำนวนผัก'] > 0
+                  ? 'สินค้าคงเหลือ: ${data['จำนวนผัก']}'
+                  : 'สินค้าหมด',
+              style: TextStyle(
+                  fontSize: 20,
+                  color: data['จำนวนผัก'] > 0 ? Colors.black : Colors.red),
+            ),
             Expanded(
               child: SizedBox(),
             ),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    addToCart(veggie);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('ได้เพิ่มสินค้าลงตะกร้าแล้ว')),
-                    );
-                  },
-                  child: SizedBox(
-                    width: 161.4,
-                    height: 75,
-                    child: Container(
-                      color: Colors.green,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.only(left: 5),
-                            child: Icon(
-                              Icons.shopping_cart,
-                              color: const Color.fromARGB(255, 255, 255, 255),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 5),
-                            child: Text(
-                              'เพิ่มลงในตะกร้า',
-                              style: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                          ), // Text
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(),
-                  child: SizedBox(
-                    width: 250,
-                    height: 75,
-                    //คำสั่งในกล่องข้อความ
-                    child: Padding(
-                      padding: EdgeInsets.only(),
-                      child: ElevatedButton(
-                        child: Text("สั่งซื้อสินค้า",
-                            style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                0), // ปรับเป็นค่าที่คุณต้องการ
-                          ),
-                          side: BorderSide(color: Colors.red, width: 2),
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    OrderConfirmationScreen(user: user)),
+            data['จำนวนผัก'] > 0
+                ? Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          addToCart(veggie);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('ได้เพิ่มสินค้าลงตะกร้าแล้ว')),
                           );
                         },
+                        child: SizedBox(
+                          width: 161.4,
+                          height: 75,
+                          child: Container(
+                            color: Colors.green,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 5),
+                                  child: Icon(
+                                    Icons.shopping_cart,
+                                    color: const Color.fromARGB(
+                                        255, 255, 255, 255),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 5),
+                                  child: Text(
+                                    'เพิ่มลงในตะกร้า',
+                                    style: TextStyle(
+                                      color: const Color.fromARGB(
+                                          255, 255, 255, 255),
+                                    ),
+                                  ),
+                                ), // Text
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                      Padding(
+                        padding: const EdgeInsets.only(),
+                        child: SizedBox(
+                          width: 250,
+                          height: 75,
+                          //คำสั่งในกล่องข้อความ
+                          child: Padding(
+                            padding: EdgeInsets.only(),
+                            child: ElevatedButton(
+                              child: Text("สั่งซื้อสินค้า",
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      0), // ปรับเป็นค่าที่คุณต้องการ
+                                ),
+                                side: BorderSide(color: Colors.red, width: 2),
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () {
+                                addToCart(veggie);
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          OrderConfirmationScreen(user: user)),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : SizedBox(),
           ],
         ),
       ),
